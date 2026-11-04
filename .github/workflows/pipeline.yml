@@ -1,0 +1,74 @@
+name: Pipeline Citas Medicas
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validar-codigo:
+    name: Validar codigo
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mostrar datos del evento
+        run: |
+          echo "Usuario: ${{ github.actor }}"
+          echo "Evento: ${{ github.event_name }}"
+          echo "Rama: ${{ github.ref }}"
+          echo "Repositorio: ${{ github.repository }}"
+      - name: Traer el repositorio
+        uses: actions/checkout@v4
+      - name: Listar archivos del repositorio
+        run: ls -la
+      - name: Revisar formato y sintaxis de Terraform
+        run: echo "Aqui irian terraform fmt y terraform validate"
+
+  construir-lambdas:
+    name: Construir funciones Lambda
+    runs-on: ubuntu-24.04
+    needs: validar-codigo
+    steps:
+      - name: Empaquetar Lambda citas y Lambda prediccion
+        run: echo "Aqui irian los zip de Lambda citas y Lambda prediccion"
+      - name: Empaquetar Lambda alerta y Lambda notificador
+        run: echo "Aqui irian los zip de Lambda alerta y Lambda notificador"
+
+  pruebas-seguridad:
+    name: Pruebas de seguridad
+    runs-on: ubuntu-24.04
+    needs: construir-lambdas
+    steps:
+      - name: Escanear la infraestructura en busca de vulnerabilidades
+        run: echo "Aqui iria un escaneo de seguridad del codigo Terraform"
+
+  crear-release:
+    name: Crear version (release)
+    runs-on: ubuntu-24.04
+    needs: pruebas-seguridad
+    steps:
+      - name: Etiquetar la version
+        run: echo "Aqui iria el tag de version, por ejemplo v1.0.0"
+      - name: Guardar la version anterior para poder volver atras
+        run: echo "Aqui se guardaria el estado anterior para el rollback"
+
+  desplegar-aws:
+    name: Desplegar en AWS
+    runs-on: ubuntu-24.04
+    needs: crear-release
+    steps:
+      - name: Preparar Terraform
+        run: echo "Aqui iria terraform init"
+      - name: Ver los cambios que se aplicarian
+        run: echo "Aqui iria terraform plan"
+      - name: Aplicar los cambios
+        run: echo "Aqui iria terraform apply, con aprobacion"
+
+  verificar-monitoreo:
+    name: Verificar monitoreo
+    runs-on: ubuntu-24.04
+    needs: desplegar-aws
+    steps:
+      - name: Comprobar que la puerta de entrada responde
+        run: echo "Aqui iria una prueba de salud a API Gateway"
+      - name: Revisar alarmas y registros
+        run: echo "Aqui se revisarian las alarmas y los registros en CloudWatch"
