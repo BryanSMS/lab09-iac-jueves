@@ -1,4 +1,5 @@
 name: Pipeline Citas Medicas
+run-name: ${{ github.actor }} esta ejecutando un pipeline
 
 on:
   push:
@@ -17,7 +18,7 @@ jobs:
           echo "Rama: ${{ github.ref }}"
           echo "Repositorio: ${{ github.repository }}"
       - name: Traer el repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Listar archivos del repositorio
         run: ls -la
       - name: Revisar formato y sintaxis de Terraform
@@ -56,13 +57,22 @@ jobs:
     runs-on: ubuntu-24.04
     needs: crear-release
     steps:
-      - name: Preparar Terraform
-        run: echo "Aqui iria terraform init"
+      - name: Usar variables y secretos de forma segura
+        env:
+          REGION: ${{ vars.AWS_REGION }}
+          BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          ROLE: ${{ secrets.AWS_ROLE_ARN }}
+        run: |
+          echo "Region: $REGION"
+          echo "Bucket del estado de Terraform: $BUCKET"
+          echo "Rol: $ROLE"
+      - name: Preparar Terraform con el estado en S3
+        run: echo "Aqui iria terraform init con -backend-config=bucket y region"
       - name: Ver los cambios que se aplicarian
         run: echo "Aqui iria terraform plan"
       - name: Aplicar los cambios
         run: echo "Aqui iria terraform apply, con aprobacion"
-
+        
   verificar-monitoreo:
     name: Verificar monitoreo
     runs-on: ubuntu-24.04
